@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- The address of this page carries a one-time QuickBooks authorization
+     code. Don't leak it: no referrer, no indexing, nothing loaded from
+     other sites. -->
+<meta name="referrer" content="no-referrer" />
+<meta name="robots" content="noindex, nofollow" />
+<title>QuickBooks Connection</title>
+<style>
+  :root {
+    --bg: #f9f9f7; --card: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e;
+    --border: rgba(11,11,11,0.12); --accent: #2a78d6; --accent-ink: #ffffff;
+    --ok: #006300; --warn-bg: #fdf3dc; --warn-border: #f2d48a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d0d0d; --card: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+      --border: rgba(255,255,255,0.12); --accent: #3987e5; --accent-ink: #ffffff;
+      --ok: #0ca30c; --warn-bg: #3a2f12; --warn-border: #6b5520;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.5; padding: 24px 16px;
+  }
+  .card {
+    max-width: 520px; margin: 0 auto; background: var(--card);
+    border: 1px solid var(--border); border-radius: 12px; padding: 24px 20px;
+  }
+  h1 { font-size: 21px; font-weight: 600; margin: 0 0 8px; }
+  p { margin: 0 0 16px; color: var(--ink-2); font-size: 16px; }
+  .step { color: var(--ink); font-weight: 600; }
+  button {
+    width: 100%; font: inherit; font-size: 17px; font-weight: 600;
+    padding: 14px; border-radius: 10px; border: 0;
+    background: var(--accent); color: var(--accent-ink); cursor: pointer;
+  }
+  .copied { margin-top: 10px; text-align: center; color: var(--ok); font-weight: 600; min-height: 1.5em; }
+  textarea {
+    width: 100%; margin-top: 16px; font: 12px ui-monospace, Menlo, monospace;
+    color: var(--ink-2); background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px; resize: none; word-break: break-all;
+  }
+  .warn { background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: 8px; padding: 12px; color: var(--ink); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main class="card">
+
+  <section id="success" hidden>
+    <h1>Approved — one last step</h1>
+    <p><span class="step">Tap Copy, then send it to Andrew right away.</span>
+       It stops working a few minutes after you approved.</p>
+    <button id="copy" type="button">Copy</button>
+    <div class="copied" id="copied" aria-live="polite"></div>
+    <textarea id="url" rows="5" readonly aria-label="Address to send"></textarea>
+    <p style="margin-top:16px;font-size:14px">That's it — you can close this page after sending.
+       Nothing in QuickBooks was changed.</p>
+  </section>
+
+  <section id="cancelled" hidden>
+    <h1>Not connected</h1>
+    <p class="warn">The connection wasn't approved (it may have been cancelled). Nothing was shared.
+       If that wasn't intended, open the original link again.</p>
+  </section>
+
+  <section id="empty">
+    <h1>Rippa PNW Metrics Sync</h1>
+    <p>This page is where QuickBooks returns you after approving the dashboard connection.
+       If you got here some other way, there's nothing to do.</p>
+  </section>
+
+</main>
+<script>
+  (function () {
+    var params = new URLSearchParams(window.location.search);
+    var show = function (id) {
+      document.getElementById('empty').hidden = true;
+      document.getElementById(id).hidden = false;
+    };
+    if (params.has('error')) { show('cancelled'); return; }
+    if (!params.has('code')) { return; }
+
+    show('success');
+    var box = document.getElementById('url');
+    var status = document.getElementById('copied');
+    box.value = window.location.href;
+
+    document.getElementById('copy').addEventListener('click', function () {
+      var done = function () { status.textContent = 'Copied — now paste it in a message to Andrew.'; };
+      var fallback = function () {
+        box.focus(); box.select(); box.setSelectionRange(0, box.value.length);
+        try { document.execCommand('copy'); done(); }
+        catch (e) { status.textContent = 'Press and hold the text below, then choose Copy.'; }
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(box.value).then(done, fallback);
+      } else { fallback(); }
+    });
+  })();
+</script>
+</body>
+</html>
